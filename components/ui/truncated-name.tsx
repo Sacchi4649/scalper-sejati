@@ -35,7 +35,7 @@ export function TruncatedName({
       title={truncated ? children : undefined}
       trigger={["hover", "click"]}
       mouseEnterDelay={0.15}
-      styles={{ body: { maxWidth: 280 } }}
+      styles={{ container: { maxWidth: 280 } }}
     >
       <span
         ref={ref}
