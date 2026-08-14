@@ -32,11 +32,11 @@ export function AdminProductActions({ product }: { product: Product }) {
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex min-w-0 flex-wrap gap-2">
       <Link
         href={`/products/${product.id}`}
         className={cn(
-          "inline-flex h-11 items-center justify-center", // layout
+          "inline-flex h-11 min-w-0 flex-1 items-center justify-center sm:flex-none", // layout
           "rounded-xl border border-line bg-white px-4", // box
           "text-sm font-medium hover:bg-canvas", // type + state
         )}
@@ -45,6 +45,7 @@ export function AdminProductActions({ product }: { product: Product }) {
       </Link>
       <Button
         variant="danger"
+        className="min-w-0 flex-1 sm:flex-none"
         disabled={busy}
         onClick={() => {
           setError("");
