@@ -32,9 +32,10 @@ export async function GET() {
 
     for (const sale of sales ?? []) {
       const profile = Array.isArray(sale.profiles) ? sale.profiles[0] : sale.profiles;
-      const current = sellerMap.get(sale.seller_id) ?? {
-        sellerId: sale.seller_id,
-        fullName: profile?.full_name ?? "Seller",
+      const sellerId = sale.seller_id ?? "unknown";
+      const current = sellerMap.get(sellerId) ?? {
+        sellerId,
+        fullName: profile?.full_name ?? "Seller dihapus",
         unitsSold: 0,
         revenue: 0,
         commission: 0,
@@ -42,7 +43,7 @@ export async function GET() {
       current.unitsSold += sale.quantity;
       current.revenue += Number(sale.quantity) * Number(sale.unit_price);
       current.commission += Number(sale.quantity) * Number(sale.unit_commission);
-      sellerMap.set(sale.seller_id, current);
+      sellerMap.set(sellerId, current);
     }
 
     const totals = (summary ?? []).reduce(
