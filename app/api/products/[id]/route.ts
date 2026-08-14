@@ -1,5 +1,6 @@
 import {
   ApiError,
+  assertCommissionFitsPrice,
   handleApiError,
   json,
   parseMoney,
@@ -39,7 +40,6 @@ export async function GET(_request: Request, context: RouteContext) {
 type ProductBody = {
   name?: string;
   price?: number;
-  openPrice?: number;
   commission?: number;
   stock?: number;
   imageUrl?: string | null;
@@ -55,12 +55,31 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const patch: Database["public"]["Tables"]["products"]["Update"] = {};
     if (body.name !== undefined) patch.name = body.name.trim();
-    if (body.price !== undefined) patch.price = parseMoney(body.price, "Harga");
-    if (body.openPrice !== undefined) {
-      patch.open_price = parseMoney(body.openPrice, "Open price");
-    }
-    if (body.commission !== undefined) {
-      patch.commission = parseMoney(body.commission, "Komisi");
+    if (body.price !== undefined || body.commission !== undefined) {
+      const { data: current, error: currentError } = await supabase
+        .from("products")
+        .select("price, commission")
+        .eq("id", Number(id))
+        .maybeSingle();
+
+      if (currentError) {
+        throw new ApiError(400, currentError.message);
+      }
+      if (!current) {
+        throw new ApiError(404, "Barang tidak ditemukan");
+      }
+
+      const price =
+        body.price !== undefined
+          ? parseMoney(body.price, "Harga")
+          : Number(current.price);
+      const commission =
+        body.commission !== undefined
+          ? parseMoney(body.commission, "Komisi")
+          : Number(current.commission);
+      assertCommissionFitsPrice(price, commission);
+      if (body.price !== undefined) patch.price = price;
+      if (body.commission !== undefined) patch.commission = commission;
     }
     if (body.stock !== undefined) {
       patch.stock = parseStock(body.stock);

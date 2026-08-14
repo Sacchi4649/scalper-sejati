@@ -1,5 +1,6 @@
 import {
   ApiError,
+  assertCommissionFitsPrice,
   handleApiError,
   json,
   parseMoney,
@@ -40,7 +41,6 @@ export async function GET(request: Request) {
 type ProductBody = {
   name?: string;
   price?: number;
-  openPrice?: number;
   commission?: number;
   stock?: number;
   imageUrl?: string | null;
@@ -51,16 +51,19 @@ export async function POST(request: Request) {
   try {
     const profile = await requireApiRole("super_admin");
     const body = await readJson<ProductBody>(request);
-    requireFields(body, ["name", "price", "openPrice", "commission", "stock"]);
+    requireFields(body, ["name", "price", "commission", "stock"]);
+
+    const price = parseMoney(body.price, "Harga");
+    const commission = parseMoney(body.commission, "Komisi");
+    assertCommissionFitsPrice(price, commission);
 
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("products")
       .insert({
         name: body.name!.trim(),
-        price: parseMoney(body.price, "Harga"),
-        open_price: parseMoney(body.openPrice, "Open price"),
-        commission: parseMoney(body.commission, "Komisi"),
+        price,
+        commission,
         stock: parseStock(body.stock),
         image_url: body.imageUrl ?? null,
         image_public_id: body.imagePublicId ?? null,

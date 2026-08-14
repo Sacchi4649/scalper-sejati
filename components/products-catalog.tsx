@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, nominalFinal } from "@/lib/format";
 import { parseSearchQuery } from "@/lib/search";
 import { AdminProductActions } from "@/components/admin-product-actions";
 import { PageHeader } from "@/components/page-header";
@@ -75,7 +75,7 @@ export function ProductsCatalog({
         title={isAdmin ? "Barang jualan" : "Listing barang"}
         description={
           isAdmin
-            ? "Unggah barang, atur nama, harga, open price, komisi, dan stok."
+            ? "Unggah barang, atur nama, harga, komisi, dan stok."
             : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
         }
         actions={
@@ -192,7 +192,9 @@ function ProductMeta({
           </h2>
           <p className="text-sm text-muted">
             Harga {formatRupiah(product.price)}
-            {compact ? ` · Open ${formatRupiah(product.open_price)}` : ""}
+            {compact
+              ? ` · Final ${formatRupiah(nominalFinal(product.price, product.commission))}`
+              : ""}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -204,7 +206,10 @@ function ProductMeta({
       </div>
       {compact ? null : (
         <p className="text-sm">
-          Open price <strong>{formatRupiah(product.open_price)}</strong>
+          Nominal final{" "}
+          <strong>
+            {formatRupiah(nominalFinal(product.price, product.commission))}
+          </strong>
         </p>
       )}
     </div>

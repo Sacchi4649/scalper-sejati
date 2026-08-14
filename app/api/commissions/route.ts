@@ -1,5 +1,6 @@
 import {
   ApiError,
+  assertCommissionFitsPrice,
   handleApiError,
   json,
   parseMoney,
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, commission")
+      .select("id, price, commission")
       .eq("id", Number(body.productId))
       .maybeSingle();
 
@@ -58,13 +59,19 @@ export async function POST(request: Request) {
       throw new ApiError(404, "Barang tidak ditemukan");
     }
 
+    const requestedCommission = parseMoney(
+      body.requestedCommission,
+      "Komisi diajukan",
+    );
+    assertCommissionFitsPrice(Number(product.price), requestedCommission);
+
     const { data, error } = await supabase
       .from("commission_requests")
       .insert({
         product_id: product.id,
         seller_id: profile.id,
         current_commission: Number(product.commission),
-        requested_commission: parseMoney(body.requestedCommission, "Komisi diajukan"),
+        requested_commission: requestedCommission,
         note: body.note?.trim() || null,
       })
       .select("*")

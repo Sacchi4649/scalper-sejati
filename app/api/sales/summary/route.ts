@@ -51,9 +51,11 @@ export async function GET() {
         acc.unitsSold += Number(row.units_sold ?? 0);
         acc.revenue += Number(row.revenue ?? 0);
         acc.commissionPaid += Number(row.commission_paid ?? 0);
+        acc.ownerPayout +=
+          Number(row.revenue ?? 0) - Number(row.commission_paid ?? 0);
         return acc;
       },
-      { unitsSold: 0, revenue: 0, commissionPaid: 0 },
+      { unitsSold: 0, revenue: 0, commissionPaid: 0, ownerPayout: 0 },
     );
 
     return json({

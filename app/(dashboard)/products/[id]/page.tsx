@@ -26,7 +26,7 @@ export default async function EditProductPage({
     <div>
       <PageHeader
         title={`Atur ${product.name}`}
-        description="Perbarui nama, harga, open price, komisi, stok, atau gambar barang."
+        description="Perbarui nama, harga, komisi, stok, atau gambar barang."
       />
       <Card>
         <ProductForm product={product} />

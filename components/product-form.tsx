@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
+import { formatRupiah, nominalFinal } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input, RupiahInput } from "@/components/ui/input";
 import { ImageUpload } from "@/components/image-upload";
@@ -18,9 +19,6 @@ export function ProductForm({ product }: { product?: Product }) {
   const router = useRouter();
   const [name, setName] = useState(product?.name ?? "");
   const [price, setPrice] = useState<number | null>(toAmount(product?.price));
-  const [openPrice, setOpenPrice] = useState<number | null>(
-    toAmount(product?.open_price),
-  );
   const [commission, setCommission] = useState<number | null>(
     toAmount(product?.commission),
   );
@@ -36,8 +34,13 @@ export function ProductForm({ product }: { product?: Product }) {
     event.preventDefault();
     setError("");
 
-    if (price == null || openPrice == null || commission == null) {
-      setError("Harga, open price, dan komisi wajib diisi");
+    if (price == null || commission == null) {
+      setError("Harga dan komisi wajib diisi");
+      return;
+    }
+
+    if (commission > price) {
+      setError("Komisi tidak boleh lebih besar dari harga");
       return;
     }
 
@@ -52,7 +55,6 @@ export function ProductForm({ product }: { product?: Product }) {
     const payload = {
       name,
       price,
-      openPrice,
       commission,
       stock: stockValue,
       imagePublicId: imagePublicId || null,
@@ -104,19 +106,23 @@ export function ProductForm({ product }: { product?: Product }) {
           required
         />
         <RupiahInput
-          label="Open price"
-          name="openPrice"
-          value={openPrice}
-          onValueChange={setOpenPrice}
-          required
-        />
-        <RupiahInput
           label="Komisi"
           name="commission"
           value={commission}
           onValueChange={setCommission}
           required
         />
+        <div className="rounded-xl border border-line bg-canvas px-3 py-3">
+          <p className="text-sm font-medium">Nominal final</p>
+          <p className="mt-1 font-display text-2xl">
+            {price == null || commission == null
+              ? "—"
+              : formatRupiah(nominalFinal(price, commission))}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Harga dikurangi komisi. Nominal yang ditransfer ke owner.
+          </p>
+        </div>
         <Input
           label="Stok"
           name="stock"

@@ -25,3 +25,10 @@ export function toNumber(value: unknown) {
   const amount = Number(value);
   return Number.isFinite(amount) ? amount : 0;
 }
+
+export function nominalFinal(
+  price: number | string | null | undefined,
+  commission: number | string | null | undefined,
+) {
+  return toNumber(price) - toNumber(commission);
+}

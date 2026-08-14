@@ -53,6 +53,12 @@ export function parseMoney(value: unknown, label: string) {
   return amount;
 }
 
+export function assertCommissionFitsPrice(price: number, commission: number) {
+  if (commission > price) {
+    throw new ApiError(400, "Komisi tidak boleh lebih besar dari harga");
+  }
+}
+
 export function parseQuantity(value: unknown) {
   const quantity = Number(value);
   if (!Number.isInteger(quantity) || quantity <= 0) {

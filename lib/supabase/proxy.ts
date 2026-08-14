@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
+import { isPublicPath } from "@/lib/public-path";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -35,9 +36,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims);
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname === "/login";
-  const isPublicAsset = pathname.startsWith("/api/");
 
-  if (!isAuthenticated && !isAuthRoute && !isPublicAsset) {
+  if (!isAuthenticated && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.search = "";

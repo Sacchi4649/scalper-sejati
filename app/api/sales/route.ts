@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("id, open_price, commission, stock")
+      .select("id, price, commission, stock")
       .eq("id", Number(body.productId))
       .maybeSingle();
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         product_id: product.id,
         seller_id: profile.id,
         quantity,
-        unit_price: Number(product.open_price),
+        unit_price: Number(product.price),
         unit_commission: Number(product.commission),
       })
       .select("*")

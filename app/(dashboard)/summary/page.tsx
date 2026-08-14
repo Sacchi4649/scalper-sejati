@@ -21,9 +21,11 @@ export default async function SummaryPage() {
       acc.unitsSold += Number(row.units_sold ?? 0);
       acc.revenue += Number(row.revenue ?? 0);
       acc.commissionPaid += Number(row.commission_paid ?? 0);
+      acc.ownerPayout +=
+        Number(row.revenue ?? 0) - Number(row.commission_paid ?? 0);
       return acc;
     },
-    { unitsSold: 0, revenue: 0, commissionPaid: 0 },
+    { unitsSold: 0, revenue: 0, commissionPaid: 0, ownerPayout: 0 },
   );
 
   const sellerMap = new Map<
@@ -55,19 +57,25 @@ export default async function SummaryPage() {
         title="Ringkasan terjual"
         description="Lihat performa katalog, omzet, dan komisi yang sudah berjalan."
       />
-      <div className="mb-8 grid gap-4 md:grid-cols-3">
+      <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <p className="text-sm text-muted">Unit terjual</p>
           <p className="mt-2 font-display text-4xl">{totals.unitsSold}</p>
         </Card>
         <Card>
-          <p className="text-sm text-muted">Omzet open price</p>
+          <p className="text-sm text-muted">Omzet</p>
           <p className="mt-2 font-display text-3xl">{formatRupiah(totals.revenue)}</p>
         </Card>
         <Card>
           <p className="text-sm text-muted">Komisi berjalan</p>
           <p className="mt-2 font-display text-3xl">
             {formatRupiah(totals.commissionPaid)}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-muted">Nominal final</p>
+          <p className="mt-2 font-display text-3xl">
+            {formatRupiah(totals.ownerPayout)}
           </p>
         </Card>
       </div>
@@ -95,6 +103,12 @@ export default async function SummaryPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium">{formatRupiah(row.revenue)}</p>
+                  <p className="text-xs text-muted">
+                    Final{" "}
+                    {formatRupiah(
+                      Number(row.revenue ?? 0) - Number(row.commission_paid ?? 0),
+                    )}
+                  </p>
                   <Badge tone="gold">{formatRupiah(row.commission_paid)}</Badge>
                 </div>
               </div>

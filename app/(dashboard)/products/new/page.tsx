@@ -9,7 +9,7 @@ export default async function NewProductPage() {
     <div>
       <PageHeader
         title="Upload barang"
-        description="Isi nama, harga, open price, komisi, dan stok, lalu unggah gambar langsung ke Cloudinary."
+        description="Isi nama, harga, komisi, dan stok, lalu unggah gambar langsung ke Cloudinary."
       />
       <Card>
         <ProductForm />

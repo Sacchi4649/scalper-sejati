@@ -41,9 +41,18 @@ export function SellerProductActions({ product }: { product: Product }) {
   }
 
   async function requestCommission() {
-    setBusy(true);
     setError("");
     setMessage("");
+    if (requestedCommission == null) {
+      setError("Komisi diajukan wajib diisi");
+      return;
+    }
+    if (requestedCommission > Number(product.price)) {
+      setError("Komisi tidak boleh lebih besar dari harga");
+      return;
+    }
+
+    setBusy(true);
     try {
       await api("/api/commissions", {
         method: "POST",

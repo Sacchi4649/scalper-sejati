@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import { LoginForm } from "@/components/login-form";
+import { PwaInstallButton } from "@/components/pwa-install-button";
 
 export default function LoginPage() {
   return (
@@ -75,6 +76,7 @@ export default function LoginPage() {
             )}
           >
             <LoginForm />
+            <PwaInstallButton />
           </div>
         </div>
       </section>

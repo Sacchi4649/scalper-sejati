@@ -82,7 +82,6 @@ export type Database = {
           image_public_id: string | null
           image_url: string | null
           name: string
-          open_price: number
           price: number
           stock: number
           updated_at: string
@@ -95,7 +94,6 @@ export type Database = {
           image_public_id?: string | null
           image_url?: string | null
           name: string
-          open_price: number
           price: number
           stock?: number
           updated_at?: string
@@ -108,7 +106,6 @@ export type Database = {
           image_public_id?: string | null
           image_url?: string | null
           name?: string
-          open_price?: number
           price?: number
           stock?: number
           updated_at?: string
@@ -203,7 +200,6 @@ export type Database = {
           commission_paid: number | null
           image_public_id: string | null
           image_url: string | null
-          open_price: number | null
           price: number | null
           product_id: number | null
           product_name: string | null
