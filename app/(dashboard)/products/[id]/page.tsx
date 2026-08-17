@@ -9,10 +9,10 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("super_admin");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: product }, { data: languages }] = await Promise.all([
+  const [, { data: product }, { data: languages }] = await Promise.all([
+    requireRole("super_admin"),
     supabase.from("products").select("*").eq("id", Number(id)).maybeSingle(),
     supabase.from("languages").select("*").order("name", { ascending: true }),
   ]);

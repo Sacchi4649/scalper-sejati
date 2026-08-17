@@ -7,14 +7,16 @@ import {
 import { PageHeader } from "@/components/ui/card";
 
 export default async function CommissionsPage() {
-  const profile = await requireProfile();
   const supabase = await createClient();
-  const { data: requests } = await supabase
-    .from("commission_requests")
-    .select(
-      "*, products(name), profiles!commission_requests_seller_id_fkey(full_name)",
-    )
-    .order("created_at", { ascending: false });
+  const [profile, { data: requests }] = await Promise.all([
+    requireProfile(),
+    supabase
+      .from("commission_requests")
+      .select(
+        "*, products(name), profiles!commission_requests_seller_id_fkey(full_name)",
+      )
+      .order("created_at", { ascending: false }),
+  ]);
 
   const isAdmin = profile.role === "super_admin";
 

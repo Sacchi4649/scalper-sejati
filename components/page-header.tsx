@@ -4,7 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
-  useLayoutEffect,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -52,7 +52,7 @@ export function PageHeader({
 }: PageHeaderContent) {
   const setHeader = useSetHeader();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     setHeader({ title, description, actions });
     return () => setHeader(null);
   }, [actions, description, setHeader, title]);
@@ -61,10 +61,10 @@ export function PageHeader({
 }
 
 export function ShellHeader({
-  fallbackTitle,
+  fallbackTitle = "",
   menuButton,
 }: {
-  fallbackTitle: string;
+  fallbackTitle?: string;
   menuButton?: ReactNode;
 }) {
   const header = useContext(HeaderStateContext);
@@ -81,11 +81,19 @@ export function ShellHeader({
       <div className="flex items-start gap-3 px-4 py-6 sm:px-8 lg:py-7">
         {menuButton}
         <div className="min-w-0">
-          <h1 className="font-display text-3xl tracking-tight text-ink lg:text-4xl">
+          <h1
+            className="font-display text-3xl tracking-tight text-ink lg:text-4xl"
+            suppressHydrationWarning
+          >
             {title}
           </h1>
           {description ? (
-            <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>
+            <p
+              className="mt-1 max-w-2xl text-sm text-muted"
+              suppressHydrationWarning
+            >
+              {description}
+            </p>
           ) : null}
         </div>
       </div>

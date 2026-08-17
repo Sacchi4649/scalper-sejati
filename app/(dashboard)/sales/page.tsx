@@ -1,17 +1,22 @@
-import { requireRole } from "@/lib/auth";
+import { getAuthUser, requireRole } from "@/lib/auth";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/ui/card";
 
 export default async function SalesPage() {
-  const profile = await requireRole("seller");
   const supabase = await createClient();
-  const { data: sales } = await supabase
-    .from("sales")
-    .select("*, products(name)")
-    .eq("seller_id", profile.id)
-    .order("sold_at", { ascending: false })
-    .limit(50);
+  const user = await getAuthUser();
+  const [, { data: sales }] = await Promise.all([
+    requireRole("seller"),
+    user
+      ? supabase
+          .from("sales")
+          .select("*, products(name)")
+          .eq("seller_id", user.id)
+          .order("sold_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
 
   return (
     <div>

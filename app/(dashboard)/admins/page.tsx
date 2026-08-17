@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, PageHeader } from "@/components/ui/card";
 
 export default async function AdminsPage() {
-  const profile = await requireRole("super_admin");
   const supabase = await createClient();
-  const { data: admins } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "super_admin")
-    .order("created_at", { ascending: false });
+  const [profile, { data: admins }] = await Promise.all([
+    requireRole("super_admin"),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "super_admin")
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
     <div>

@@ -5,11 +5,7 @@ import { useState } from "react";
 import type { Language, Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { formatRupiah, nominalFinal } from "@/lib/format";
-import {
-  DEFAULT_PRODUCT_LANGUAGE,
-  isProductLanguageSlug,
-  productsPath,
-} from "@/lib/product-languages";
+import { productsPath } from "@/lib/product-languages";
 import { Button } from "@/components/ui/button";
 import { Input, RupiahInput, Select } from "@/components/ui/input";
 import { ImageUpload } from "@/components/image-upload";
@@ -93,13 +89,7 @@ export function ProductForm({
           body: JSON.stringify(payload),
         });
       }
-      const selected = languages.find(
-        (language) => String(language.id) === languageId,
-      );
-      const nextLang = isProductLanguageSlug(selected?.slug)
-        ? selected.slug
-        : DEFAULT_PRODUCT_LANGUAGE;
-      router.push(productsPath(nextLang));
+      router.push(productsPath());
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal menyimpan",

@@ -3,17 +3,14 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { requireProfile } from "@/lib/auth";
 
-export const dynamic = "force-dynamic";
-
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const profile = await requireProfile();
   return (
     <Suspense>
-      <AppShell profile={profile}>{children}</AppShell>
+      <AppShell profilePromise={requireProfile()}>{children}</AppShell>
     </Suspense>
   );
 }

@@ -1,12 +1,12 @@
-import { requireProfile } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser, requireProfile } from "@/lib/auth";
 import { ProfileSettings } from "@/components/profile-settings";
 import { PageHeader } from "@/components/ui/card";
 
 export default async function ProfilePage() {
-  const profile = await requireProfile();
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
+  const [profile, user] = await Promise.all([
+    requireProfile(),
+    getAuthUser(),
+  ]);
 
   return (
     <div>
@@ -14,7 +14,7 @@ export default async function ProfilePage() {
         title="Profil"
         description="Perbarui nama tampilan dan kata sandi akun Anda."
       />
-      <ProfileSettings profile={profile} email={data.user?.email ?? ""} />
+      <ProfileSettings profile={profile} email={user?.email ?? ""} />
     </div>
   );
 }

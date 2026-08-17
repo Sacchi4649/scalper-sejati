@@ -12,12 +12,14 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
-    await requireApiProfile();
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("commission_requests")
-      .select("*, products(name, commission), profiles!commission_requests_seller_id_fkey(full_name)")
-      .order("created_at", { ascending: false });
+    const [, { data, error }] = await Promise.all([
+      requireApiProfile(),
+      supabase
+        .from("commission_requests")
+        .select("*, products(name, commission), profiles!commission_requests_seller_id_fkey(full_name)")
+        .order("created_at", { ascending: false }),
+    ]);
 
     if (error) {
       throw new ApiError(400, error.message);
@@ -37,12 +39,13 @@ type CommissionBody = {
 
 export async function POST(request: Request) {
   try {
-    const profile = await requireApiProfile();
+    const [profile, body] = await Promise.all([
+      requireApiProfile(),
+      readJson<CommissionBody>(request),
+    ]);
     if (profile.role !== "seller") {
       throw new ApiError(403, "Hanya seller yang dapat mengajukan komisi");
     }
-
-    const body = await readJson<CommissionBody>(request);
     requireFields(body, ["productId", "requestedCommission"]);
 
     const supabase = await createClient();

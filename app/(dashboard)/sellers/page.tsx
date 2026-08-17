@@ -6,13 +6,15 @@ import { DeleteAccountButton } from "@/components/delete-account-button";
 import { Card, PageHeader } from "@/components/ui/card";
 
 export default async function SellersPage() {
-  await requireRole("super_admin");
   const supabase = await createClient();
-  const { data: sellers } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "seller")
-    .order("created_at", { ascending: false });
+  const [, { data: sellers }] = await Promise.all([
+    requireRole("super_admin"),
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "seller")
+      .order("created_at", { ascending: false }),
+  ]);
 
   return (
     <div>

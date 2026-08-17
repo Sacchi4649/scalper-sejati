@@ -16,7 +16,6 @@ import { UNCATEGORIZED_LANGUAGE_SLUG } from "@/lib/product-languages";
 
 export async function GET(request: Request) {
   try {
-    await requireApiProfile();
     const search = new URL(request.url).searchParams;
     const query = parseSearchQuery(search.get("q"));
     const lang = search.get("lang");
@@ -40,7 +39,10 @@ export async function GET(request: Request) {
       listQuery = listQuery.ilike("name", toIlikePattern(query));
     }
 
-    const { data, error } = await listQuery;
+    const [, { data, error }] = await Promise.all([
+      requireApiProfile(),
+      listQuery,
+    ]);
 
     if (error) {
       throw new ApiError(400, error.message);

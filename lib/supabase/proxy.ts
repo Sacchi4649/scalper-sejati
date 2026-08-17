@@ -3,15 +3,48 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { isPublicPath } from "@/lib/public-path";
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+function hasSupabaseSession(request: NextRequest) {
+  return request.cookies.getAll().some(
+    (cookie) =>
+      cookie.value &&
+      (cookie.name.endsWith("-auth-token") || /auth-token\.\d+$/.test(cookie.name)),
+  );
+}
 
-  if (!url || !key) {
-    return response;
+export async function updateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next({ request });
   }
 
+  const isAuthenticated = hasSupabaseSession(request);
+  const isAuthRoute = pathname === "/login";
+
+  if (!isAuthenticated && !isPublicPath(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.search = "";
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (isAuthenticated && isAuthRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (!isAuthenticated) {
+    return NextResponse.next({ request });
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    return NextResponse.next({ request });
+  }
+
+  let response = NextResponse.next({ request });
   const supabase = createServerClient<Database>(url, key, {
     cookies: {
       getAll() {
@@ -32,23 +65,6 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const isAuthenticated = Boolean(data?.claims);
-  const pathname = request.nextUrl.pathname;
-  const isAuthRoute = pathname === "/login";
-
-  if (!isAuthenticated && !isPublicPath(pathname)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  if (isAuthenticated && isAuthRoute) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    return NextResponse.redirect(redirectUrl);
-  }
-
+  await supabase.auth.getClaims();
   return response;
 }

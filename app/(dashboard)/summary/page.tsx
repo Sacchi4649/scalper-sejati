@@ -1,28 +1,33 @@
 import { requireRole } from "@/lib/auth";
 import { formatRupiah } from "@/lib/format";
+import { soldProductsFromSales } from "@/lib/sales-summary";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, PageHeader } from "@/components/ui/card";
 import { ProductImage } from "@/components/product-image";
 
 export default async function SummaryPage() {
-  await requireRole("super_admin");
   const supabase = await createClient();
-
-  const [{ data: summary }, { data: sales }] = await Promise.all([
-    supabase.from("sales_summary").select("*").order("units_sold", { ascending: false }),
+  const [, { data: sales }] = await Promise.all([
+    requireRole("super_admin"),
     supabase
       .from("sales")
-      .select("quantity, unit_price, unit_commission, seller_id, profiles!sales_seller_id_fkey(full_name)"),
+      .select(
+        "product_id, quantity, unit_price, unit_commission, seller_id, sold_at, products(name, image_public_id, commission), profiles!sales_seller_id_fkey(full_name)",
+      )
+      .order("sold_at", { ascending: false }),
   ]);
 
-  const totals = (summary ?? []).reduce(
-    (acc, row) => {
-      acc.unitsSold += Number(row.units_sold ?? 0);
-      acc.revenue += Number(row.revenue ?? 0);
-      acc.commissionPaid += Number(row.commission_paid ?? 0);
-      acc.ownerPayout +=
-        Number(row.revenue ?? 0) - Number(row.commission_paid ?? 0);
+  const rows = sales ?? [];
+  const totals = rows.reduce(
+    (acc, sale) => {
+      const quantity = Number(sale.quantity);
+      const revenue = quantity * Number(sale.unit_price);
+      const commissionPaid = quantity * Number(sale.unit_commission);
+      acc.unitsSold += quantity;
+      acc.revenue += revenue;
+      acc.commissionPaid += commissionPaid;
+      acc.ownerPayout += revenue - commissionPaid;
       return acc;
     },
     { unitsSold: 0, revenue: 0, commissionPaid: 0, ownerPayout: 0 },
@@ -30,26 +35,35 @@ export default async function SummaryPage() {
 
   const sellerMap = new Map<
     string,
-    { name: string; unitsSold: number; revenue: number }
+    { name: string; unitsSold: number; revenue: number; commission: number }
   >();
 
-  for (const sale of sales ?? []) {
-    const profile = Array.isArray(sale.profiles) ? sale.profiles[0] : sale.profiles;
+  for (const sale of rows) {
+    const profile = Array.isArray(sale.profiles)
+      ? sale.profiles[0]
+      : sale.profiles;
     const sellerId = sale.seller_id ?? "unknown";
     const current = sellerMap.get(sellerId) ?? {
       name: profile?.full_name ?? "Seller dihapus",
       unitsSold: 0,
       revenue: 0,
+      commission: 0,
     };
-    current.unitsSold += sale.quantity;
-    current.revenue += Number(sale.quantity) * Number(sale.unit_price);
+    const quantity = Number(sale.quantity);
+    current.unitsSold += quantity;
+    current.revenue += quantity * Number(sale.unit_price);
+    current.commission += quantity * Number(sale.unit_commission);
     sellerMap.set(sellerId, current);
   }
 
-  const sellers = Array.from(sellerMap.entries()).map(([id, seller]) => ({
-    id,
-    ...seller,
-  })).sort((a, b) => b.revenue - a.revenue);
+  const sellers = Array.from(sellerMap.entries())
+    .map(([id, seller]) => ({
+      id,
+      ...seller,
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  const recentProducts = soldProductsFromSales(rows);
 
   return (
     <div>
@@ -83,38 +97,38 @@ export default async function SummaryPage() {
         <Card className="p-0">
           <div className="border-b border-line px-5 py-4">
             <h2 className="font-display text-xl">Per barang</h2>
+            <p className="mt-1 text-sm text-muted">
+              5 barang terakhir yang terjual
+            </p>
           </div>
           <div className="divide-y divide-line">
-            {(summary ?? []).map((row) => (
+            {recentProducts.map((row) => (
               <div
                 key={row.product_id}
                 className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4"
               >
                 <ProductImage
                   publicId={row.image_public_id}
-                  alt={row.product_name ?? "Barang"}
+                  alt={row.product_name}
                   className="h-16 w-16 rounded-xl"
                 />
                 <div>
                   <p className="font-medium">{row.product_name}</p>
                   <p className="text-sm text-muted">
-                    {row.units_sold ?? 0} unit · komisi {formatRupiah(row.commission)}
+                    {row.units_sold} unit · komisi {formatRupiah(row.commission)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-medium">{formatRupiah(row.revenue)}</p>
                   <p className="text-xs text-muted">
-                    Final{" "}
-                    {formatRupiah(
-                      Number(row.revenue ?? 0) - Number(row.commission_paid ?? 0),
-                    )}
+                    Final {formatRupiah(row.revenue - row.commission_paid)}
                   </p>
                   <Badge tone="gold">{formatRupiah(row.commission_paid)}</Badge>
                 </div>
               </div>
             ))}
-            {(summary ?? []).length === 0 ? (
-              <p className="px-5 py-8 text-sm text-muted">Belum ada barang.</p>
+            {recentProducts.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-muted">Belum ada penjualan.</p>
             ) : null}
           </div>
         </Card>
@@ -130,7 +144,12 @@ export default async function SummaryPage() {
                   <p className="font-medium">{seller.name}</p>
                   <p className="text-xs text-muted">{seller.unitsSold} unit</p>
                 </div>
-                <p className="text-sm font-medium">{formatRupiah(seller.revenue)}</p>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{formatRupiah(seller.revenue)}</p>
+                  <p className="text-xs text-muted">
+                    Komisi {formatRupiah(seller.commission)}
+                  </p>
+                </div>
               </div>
             ))}
             {sellers.length === 0 ? (

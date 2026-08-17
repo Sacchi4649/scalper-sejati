@@ -4,12 +4,11 @@ import { ProductForm } from "@/components/product-form";
 import { Card, PageHeader } from "@/components/ui/card";
 
 export default async function NewProductPage() {
-  await requireRole("super_admin");
   const supabase = await createClient();
-  const { data: languages } = await supabase
-    .from("languages")
-    .select("*")
-    .order("name", { ascending: true });
+  const [, { data: languages }] = await Promise.all([
+    requireRole("super_admin"),
+    supabase.from("languages").select("*").order("name", { ascending: true }),
+  ]);
 
   return (
     <div>

@@ -2,33 +2,41 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { ProductWithLanguage } from "@/lib/database.types";
+import { useRouter } from "next/navigation";
+import type { Language, ProductWithLanguage } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { formatRupiah, nominalFinal } from "@/lib/format";
 import { parseSearchQuery } from "@/lib/search";
-import { isUncategorizedListing } from "@/lib/product-languages";
+import {
+  isUncategorizedListing,
+  productsPath,
+  UNCATEGORIZED_LANGUAGE_LABEL,
+  UNCATEGORIZED_LANGUAGE_SLUG,
+} from "@/lib/product-languages";
 import { AdminProductActions } from "@/components/admin-product-actions";
 import { PageHeader } from "@/components/page-header";
 import { ProductImage } from "@/components/product-image";
 import { SellerProductActions } from "@/components/seller-product-actions";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
 import { TruncatedName } from "@/components/ui/truncated-name";
 import { ViewToggle, useListView } from "@/components/view-toggle";
 
 export function ProductsCatalog({
   products,
+  languages,
   isAdmin,
-  languageLabel,
   languageSlug,
 }: {
   products: ProductWithLanguage[];
+  languages: Array<Pick<Language, "id" | "name" | "slug">>;
   isAdmin: boolean;
-  languageLabel: string;
-  languageSlug: string;
+  languageSlug: string | null;
 }) {
+  const router = useRouter();
   const [view, setView] = useListView("scalper:products-view");
   const [query, setQuery] = useState("");
   const [base, setBase] = useState(products);
@@ -57,6 +65,10 @@ export function ProductsCatalog({
     setResults((list) => list.filter((item) => item.id !== id));
   }
 
+  function onLanguageFilter(next: string) {
+    router.replace(productsPath(next || null));
+  }
+
   useEffect(() => {
     const q = parseSearchQuery(query);
     if (!q) {
@@ -64,11 +76,14 @@ export function ProductsCatalog({
       return;
     }
 
+    const params = new URLSearchParams({ q });
+    if (languageSlug) params.set("lang", languageSlug);
+
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setSearching(true);
       void api<{ products: ProductWithLanguage[] }>(
-        `/api/products?lang=${encodeURIComponent(languageSlug)}&q=${encodeURIComponent(q)}`,
+        `/api/products?${params.toString()}`,
         { signal: controller.signal },
       )
         .then((payload) => {
@@ -92,34 +107,27 @@ export function ProductsCatalog({
 
   const hasQuery = Boolean(parseSearchQuery(query));
   const uncategorized = isUncategorizedListing(languageSlug);
+  const selectedLanguage = languages.find((item) => item.slug === languageSlug);
   const emptyMessage = hasQuery
     ? "Tidak ada barang yang cocok dengan pencarian."
     : uncategorized
       ? "Tidak ada barang tanpa kategori bahasa."
-      : isAdmin
-        ? `Belum ada barang ${languageLabel}. Mulai dengan mengunggah katalog pertama.`
-        : `Belum ada barang ${languageLabel} yang bisa dijual.`;
+      : selectedLanguage
+        ? isAdmin
+          ? `Belum ada barang ${selectedLanguage.name}. Mulai dengan mengunggah katalog pertama.`
+          : `Belum ada barang ${selectedLanguage.name} yang bisa dijual.`
+        : isAdmin
+          ? "Belum ada barang. Mulai dengan mengunggah katalog pertama."
+          : "Belum ada barang yang bisa dijual.";
 
   return (
     <>
       <PageHeader
-        title={
-          uncategorized
-            ? isAdmin
-              ? "Barang belum dikategorikan"
-              : "Listing belum dikategorikan"
-            : isAdmin
-              ? `Barang ${languageLabel}`
-              : `Listing ${languageLabel}`
-        }
+        title={isAdmin ? "Barang" : "Listing"}
         description={
-          uncategorized
-            ? isAdmin
-              ? "Barang tanpa kategori bahasa. Atur kategorinya dari halaman edit."
-              : "Barang yang belum punya kategori bahasa."
-            : isAdmin
-              ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
-              : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
+          isAdmin
+            ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
+            : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
         }
         actions={
           <>
@@ -127,15 +135,15 @@ export function ProductsCatalog({
               <Link
                 href="/products/new"
                 className={cn(
-                  "inline-flex h-11 w-full shrink-0 items-center justify-center", // layout
-                  "rounded-xl bg-brand px-4 sm:w-auto", // box
-                  "text-sm font-medium text-white hover:bg-brand-dark", // type + state
+                  "inline-flex h-11 w-full shrink-0 items-center justify-center",
+                  "rounded-xl bg-brand px-4 sm:w-auto",
+                  "text-sm font-medium text-white hover:bg-brand-dark",
                 )}
               >
                 Upload barang
               </Link>
             ) : null}
-            <div className="grid min-w-0 w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <div className="grid min-w-0 w-full gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(180px,220px)_auto] sm:items-end">
               <SearchInput
                 value={query}
                 onChange={setQuery}
@@ -143,7 +151,22 @@ export function ProductsCatalog({
                 searching={searching}
                 className="min-w-0 w-full"
               />
-              {products.length > 0 ? (
+              <Select
+                label="Bahasa"
+                value={languageSlug ?? ""}
+                onChange={(event) => onLanguageFilter(event.target.value)}
+              >
+                <option value="">Semua bahasa</option>
+                {languages.map((language) => (
+                  <option key={language.id} value={language.slug}>
+                    {language.name}
+                  </option>
+                ))}
+                <option value={UNCATEGORIZED_LANGUAGE_SLUG}>
+                  {UNCATEGORIZED_LANGUAGE_LABEL}
+                </option>
+              </Select>
+              {products.length > 0 || results.length > 0 ? (
                 <ViewToggle value={view} onChange={setView} />
               ) : null}
             </div>

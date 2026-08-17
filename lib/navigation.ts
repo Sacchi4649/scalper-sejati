@@ -1,33 +1,11 @@
 import type { AppRole } from "@/lib/database.types";
-import {
-  PRODUCT_LANGUAGE_MENUS,
-  UNCATEGORIZED_LANGUAGE_LABEL,
-  UNCATEGORIZED_LANGUAGE_SLUG,
-  productsPath,
-} from "@/lib/product-languages";
-
-export type NavChild = {
-  href: string;
-  label: string;
-};
+import { productsPath } from "@/lib/product-languages";
 
 export type NavItem = {
   href: string;
   label: string;
   description: string;
-  children?: NavChild[];
 };
-
-const productChildren: NavChild[] = [
-  ...PRODUCT_LANGUAGE_MENUS.map((item) => ({
-    href: productsPath(item.slug),
-    label: item.label,
-  })),
-  {
-    href: productsPath(UNCATEGORIZED_LANGUAGE_SLUG),
-    label: UNCATEGORIZED_LANGUAGE_LABEL,
-  },
-];
 
 export function navItemsForRole(role: AppRole): NavItem[] {
   if (role === "super_admin") {
@@ -41,7 +19,6 @@ export function navItemsForRole(role: AppRole): NavItem[] {
         href: productsPath(),
         label: "Barang",
         description: "Kelola katalog",
-        children: productChildren,
       },
       {
         href: "/master",
@@ -71,7 +48,6 @@ export function navItemsForRole(role: AppRole): NavItem[] {
       href: productsPath(),
       label: "Listing",
       description: "Barang yang dijual",
-      children: productChildren,
     },
     {
       href: "/sales",
@@ -84,4 +60,13 @@ export function navItemsForRole(role: AppRole): NavItem[] {
       description: "Minta penyesuaian",
     },
   ];
+}
+
+export function titleForPath(pathname: string, role: AppRole) {
+  const match = navItemsForRole(role).find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
+  if (match) return match.label;
+  if (pathname.startsWith("/profile")) return "Profil";
+  return "Scalper Sejati";
 }

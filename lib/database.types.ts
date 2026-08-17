@@ -280,7 +280,7 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 export type Product = Database["public"]["Tables"]["products"]["Row"]
 export type Language = Database["public"]["Tables"]["languages"]["Row"]
 export type ProductWithLanguage = Product & {
-  languages: Pick<Language, "id" | "name"> | null
+  languages: Pick<Language, "id" | "name" | "slug"> | null
 }
 export type Sale = Database["public"]["Tables"]["sales"]["Row"]
 export type CommissionRequest =
