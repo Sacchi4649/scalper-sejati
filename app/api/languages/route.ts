@@ -7,6 +7,7 @@ import {
 } from "@/lib/http";
 import { requireApiProfile, requireApiRole } from "@/lib/server/session";
 import { createClient } from "@/lib/supabase/server";
+import { slugifyLanguage } from "@/lib/product-languages";
 
 export async function GET() {
   try {
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("languages")
-      .insert({ name })
+      .insert({ name, slug: slugifyLanguage(name) })
       .select("*")
       .single();
 

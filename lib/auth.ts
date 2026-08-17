@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { AppRole, Profile } from "@/lib/database.types";
+import { productsPath } from "@/lib/product-languages";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -36,5 +37,5 @@ export async function requireRole(role: AppRole) {
 }
 
 export function homePathForRole(role: AppRole) {
-  return role === "super_admin" ? "/summary" : "/products";
+  return role === "super_admin" ? "/summary" : productsPath();
 }

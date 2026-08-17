@@ -16,12 +16,25 @@ import { parseSearchQuery, toIlikePattern } from "@/lib/search";
 export async function GET(request: Request) {
   try {
     await requireApiProfile();
-    const query = parseSearchQuery(new URL(request.url).searchParams.get("q"));
+    const search = new URL(request.url).searchParams;
+    const query = parseSearchQuery(search.get("q"));
+    const lang = search.get("lang");
     const supabase = await createClient();
     let listQuery = supabase
       .from("products")
       .select("*, languages(id, name)")
       .order("created_at", { ascending: false });
+
+    if (lang) {
+      const { data: language } = await supabase
+        .from("languages")
+        .select("id")
+        .eq("slug", lang)
+        .maybeSingle();
+      if (language) {
+        listQuery = listQuery.eq("language_id", language.id);
+      }
+    }
 
     if (query) {
       listQuery = listQuery.ilike("name", toIlikePattern(query));

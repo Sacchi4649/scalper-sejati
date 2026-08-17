@@ -1,10 +1,25 @@
 import type { AppRole } from "@/lib/database.types";
+import {
+  PRODUCT_LANGUAGE_MENUS,
+  productsPath,
+} from "@/lib/product-languages";
+
+export type NavChild = {
+  href: string;
+  label: string;
+};
 
 export type NavItem = {
   href: string;
   label: string;
   description: string;
+  children?: NavChild[];
 };
+
+const productChildren: NavChild[] = PRODUCT_LANGUAGE_MENUS.map((item) => ({
+  href: productsPath(item.slug),
+  label: item.label,
+}));
 
 export function navItemsForRole(role: AppRole): NavItem[] {
   if (role === "super_admin") {
@@ -15,9 +30,10 @@ export function navItemsForRole(role: AppRole): NavItem[] {
         description: "Performa penjualan",
       },
       {
-        href: "/products",
+        href: productsPath(),
         label: "Barang",
         description: "Kelola katalog",
+        children: productChildren,
       },
       {
         href: "/master",
@@ -44,9 +60,10 @@ export function navItemsForRole(role: AppRole): NavItem[] {
 
   return [
     {
-      href: "/products",
+      href: productsPath(),
       label: "Listing",
       description: "Barang yang dijual",
+      children: productChildren,
     },
     {
       href: "/sales",

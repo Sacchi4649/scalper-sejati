@@ -5,6 +5,11 @@ import { useState } from "react";
 import type { Language, Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { formatRupiah, nominalFinal } from "@/lib/format";
+import {
+  DEFAULT_PRODUCT_LANGUAGE,
+  isProductLanguageSlug,
+  productsPath,
+} from "@/lib/product-languages";
 import { Button } from "@/components/ui/button";
 import { Input, RupiahInput, Select } from "@/components/ui/input";
 import { ImageUpload } from "@/components/image-upload";
@@ -88,7 +93,13 @@ export function ProductForm({
           body: JSON.stringify(payload),
         });
       }
-      router.push("/products");
+      const selected = languages.find(
+        (language) => String(language.id) === languageId,
+      );
+      const nextLang = isProductLanguageSlug(selected?.slug)
+        ? selected.slug
+        : DEFAULT_PRODUCT_LANGUAGE;
+      router.push(productsPath(nextLang));
       router.refresh();
     } catch (submitError) {
       setError(
@@ -172,7 +183,7 @@ export function ProductForm({
           <Button type="submit" disabled={saving || languages.length === 0}>
             {saving ? "Menyimpan..." : "Simpan barang"}
           </Button>
-          <Button variant="secondary" onClick={() => router.push("/products")}>
+          <Button variant="secondary" onClick={() => router.push(productsPath())}>
             Batal
           </Button>
         </div>

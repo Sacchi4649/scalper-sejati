@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { formatRupiah } from "@/lib/format";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { Button } from "@/components/ui/button";
 import { Input, RupiahInput, Textarea } from "@/components/ui/input";
 
@@ -18,6 +19,36 @@ export function SellerProductActions({ product }: { product: Product }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<"sale" | "commission" | null>(null);
+
+  function openSaleConfirm() {
+    setError("");
+    setMessage("");
+    const qty = Number(quantity);
+    if (!Number.isInteger(qty) || qty < 1) {
+      setError("Jumlah tidak valid");
+      return;
+    }
+    if (qty > product.stock) {
+      setError("Stok tidak cukup");
+      return;
+    }
+    setConfirm("sale");
+  }
+
+  function openCommissionConfirm() {
+    setError("");
+    setMessage("");
+    if (requestedCommission == null) {
+      setError("Komisi diajukan wajib diisi");
+      return;
+    }
+    if (requestedCommission > Number(product.price)) {
+      setError("Komisi tidak boleh lebih besar dari harga");
+      return;
+    }
+    setConfirm("commission");
+  }
 
   async function recordSale() {
     setBusy(true);
@@ -31,6 +62,7 @@ export function SellerProductActions({ product }: { product: Product }) {
           quantity: Number(quantity),
         }),
       });
+      setConfirm(null);
       setMessage("Penjualan tercatat.");
       router.refresh();
     } catch (submitError) {
@@ -41,18 +73,9 @@ export function SellerProductActions({ product }: { product: Product }) {
   }
 
   async function requestCommission() {
+    setBusy(true);
     setError("");
     setMessage("");
-    if (requestedCommission == null) {
-      setError("Komisi diajukan wajib diisi");
-      return;
-    }
-    if (requestedCommission > Number(product.price)) {
-      setError("Komisi tidak boleh lebih besar dari harga");
-      return;
-    }
-
-    setBusy(true);
     try {
       await api("/api/commissions", {
         method: "POST",
@@ -62,6 +85,7 @@ export function SellerProductActions({ product }: { product: Product }) {
           note,
         }),
       });
+      setConfirm(null);
       setMessage("Pengajuan komisi terkirim.");
       router.refresh();
     } catch (submitError) {
@@ -70,6 +94,10 @@ export function SellerProductActions({ product }: { product: Product }) {
       setBusy(false);
     }
   }
+
+  const saleQty = Number(quantity);
+  const commissionConfirmOpen = confirm === "commission";
+  const saleConfirmOpen = confirm === "sale";
 
   return (
     <div className="grid gap-3">
@@ -84,7 +112,7 @@ export function SellerProductActions({ product }: { product: Product }) {
         />
         <Button
           disabled={busy || product.stock < 1}
-          onClick={() => void recordSale()}
+          onClick={openSaleConfirm}
         >
           Catat
         </Button>
@@ -102,12 +130,32 @@ export function SellerProductActions({ product }: { product: Product }) {
       <Button
         variant="secondary"
         disabled={busy}
-        onClick={() => void requestCommission()}
+        onClick={openCommissionConfirm}
       >
         Ajukan perubahan komisi
       </Button>
       {message ? <p className="text-sm text-brand">{message}</p> : null}
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error && !confirm ? <p className="text-sm text-red-700">{error}</p> : null}
+      <ConfirmModal
+        open={saleConfirmOpen}
+        title={`Catat penjualan ${product.name}?`}
+        description={`${saleQty} unit akan dicatat. Stok berkurang menjadi ${Math.max(product.stock - saleQty, 0)}.`}
+        error={saleConfirmOpen ? error : undefined}
+        loading={busy}
+        okText="Catat"
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => void recordSale()}
+      />
+      <ConfirmModal
+        open={commissionConfirmOpen}
+        title={`Ajukan perubahan komisi ${product.name}?`}
+        description={`Komisi ${formatRupiah(product.commission)} menjadi ${formatRupiah(requestedCommission)}.`}
+        error={commissionConfirmOpen ? error : undefined}
+        loading={busy}
+        okText="Ajukan"
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => void requestCommission()}
+      />
     </div>
   );
 }

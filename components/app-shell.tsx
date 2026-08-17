@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import type { Profile } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
-import { navItemsForRole } from "@/lib/navigation";
+import { navItemsForRole, type NavItem } from "@/lib/navigation";
 import {
   PageHeaderProvider,
   ShellHeader,
@@ -22,12 +22,12 @@ export function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const items = navItemsForRole(profile.role);
-  const activeItem = items.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-  );
+  const activeLang = searchParams.get("lang");
+  const activeItem = items.find((item) => isNavItemActive(item, pathname));
 
   async function logout() {
     await api("/api/auth/logout", { method: "POST" });
@@ -60,28 +60,55 @@ export function AppShell({
               Tutup
             </button>
           </div>
-          <nav className="grid gap-1 px-3 py-4">
+          <nav className="grid flex-1 gap-1 overflow-y-auto px-3 py-4">
             {items.map((item) => {
-              const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = isNavItemActive(item, pathname);
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "rounded-xl px-3 py-3", // box
-                    "transition-colors", // state
-                    active
-                      ? "bg-white/10 text-white"
-                      : "text-white/70 hover:bg-white/5 hover:text-white",
-                  )}
-                >
-                  <span className="block text-sm font-medium">{item.label}</span>
-                  <span className="block text-xs text-white/50">
-                    {item.description}
-                  </span>
-                </Link>
+                <div key={item.href} className="grid gap-1">
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "rounded-xl px-3 py-3", // box
+                      "transition-colors", // state
+                      active
+                        ? "bg-white/10 text-white"
+                        : "text-white/70 hover:bg-white/5 hover:text-white",
+                    )}
+                  >
+                    <span className="block text-sm font-medium">{item.label}</span>
+                    <span className="block text-xs text-white/50">
+                      {item.description}
+                    </span>
+                  </Link>
+                  {item.children ? (
+                    <div className="mb-1 grid gap-0.5 pl-3">
+                      {item.children.map((child) => {
+                        const childLang = new URL(
+                          child.href,
+                          "http://local",
+                        ).searchParams.get("lang");
+                        const childActive =
+                          pathname === "/products" && childLang === activeLang;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setOpen(false)}
+                            className={cn(
+                              "rounded-lg px-3 py-2 text-sm transition-colors",
+                              childActive
+                                ? "bg-white/10 text-white"
+                                : "text-white/55 hover:bg-white/5 hover:text-white",
+                            )}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
           </nav>
@@ -146,4 +173,11 @@ function MenuIcon() {
       <rect x="1" y="11.2" width="14" height="1.8" rx="0.9" />
     </svg>
   );
+}
+
+function isNavItemActive(item: NavItem, pathname: string) {
+  if (item.children) {
+    return pathname === "/products" || pathname.startsWith("/products/");
+  }
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }

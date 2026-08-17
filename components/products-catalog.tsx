@@ -20,9 +20,13 @@ import { ViewToggle, useListView } from "@/components/view-toggle";
 export function ProductsCatalog({
   products,
   isAdmin,
+  languageLabel,
+  languageSlug,
 }: {
   products: ProductWithLanguage[];
   isAdmin: boolean;
+  languageLabel: string;
+  languageSlug: string;
 }) {
   const [view, setView] = useListView("scalper:products-view");
   const [query, setQuery] = useState("");
@@ -41,7 +45,7 @@ export function ProductsCatalog({
     const timer = window.setTimeout(() => {
       setSearching(true);
       void api<{ products: ProductWithLanguage[] }>(
-        `/api/products?q=${encodeURIComponent(q)}`,
+        `/api/products?lang=${encodeURIComponent(languageSlug)}&q=${encodeURIComponent(q)}`,
         { signal: controller.signal },
       )
         .then((payload) => {
@@ -61,19 +65,19 @@ export function ProductsCatalog({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [products, query]);
+  }, [languageSlug, products, query]);
 
   const hasQuery = Boolean(parseSearchQuery(query));
   const emptyMessage = hasQuery
     ? "Tidak ada barang yang cocok dengan pencarian."
     : isAdmin
-      ? "Belum ada barang. Mulai dengan mengunggah katalog pertama."
-      : "Belum ada barang yang bisa dijual.";
+      ? `Belum ada barang ${languageLabel}. Mulai dengan mengunggah katalog pertama.`
+      : `Belum ada barang ${languageLabel} yang bisa dijual.`;
 
   return (
     <>
       <PageHeader
-        title={isAdmin ? "Barang jualan" : "Listing barang"}
+        title={isAdmin ? `Barang ${languageLabel}` : `Listing ${languageLabel}`}
         description={
           isAdmin
             ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
