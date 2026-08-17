@@ -5,12 +5,21 @@ export const PRODUCT_LANGUAGE_MENUS = [
   { slug: "indonesian", label: "Indo" },
 ] as const;
 
+export const UNCATEGORIZED_LANGUAGE_SLUG = "uncategorized";
+export const UNCATEGORIZED_LANGUAGE_LABEL = "Belum dikategorikan";
+
 export type ProductLanguageSlug =
   (typeof PRODUCT_LANGUAGE_MENUS)[number]["slug"];
 
+export type ProductListingSlug =
+  | ProductLanguageSlug
+  | typeof UNCATEGORIZED_LANGUAGE_SLUG;
+
 export const DEFAULT_PRODUCT_LANGUAGE: ProductLanguageSlug = "english";
 
-export function productsPath(slug: ProductLanguageSlug = DEFAULT_PRODUCT_LANGUAGE) {
+export function productsPath(
+  slug: ProductListingSlug = DEFAULT_PRODUCT_LANGUAGE,
+) {
   return `/products?lang=${slug}`;
 }
 
@@ -20,8 +29,23 @@ export function isProductLanguageSlug(
   return PRODUCT_LANGUAGE_MENUS.some((item) => item.slug === value);
 }
 
+export function isProductListingSlug(
+  value: string | null | undefined,
+): value is ProductListingSlug {
+  return isProductLanguageSlug(value) || value === UNCATEGORIZED_LANGUAGE_SLUG;
+}
+
+export function isUncategorizedListing(slug: string) {
+  return slug === UNCATEGORIZED_LANGUAGE_SLUG;
+}
+
 export function productLanguageLabel(slug: ProductLanguageSlug) {
   return PRODUCT_LANGUAGE_MENUS.find((item) => item.slug === slug)?.label ?? slug;
+}
+
+export function productListingLabel(slug: ProductListingSlug) {
+  if (isUncategorizedListing(slug)) return UNCATEGORIZED_LANGUAGE_LABEL;
+  return productLanguageLabel(slug);
 }
 
 export function slugifyLanguage(name: string) {

@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import {
-  isProductLanguageSlug,
-  productLanguageLabel,
+  isProductListingSlug,
+  isUncategorizedListing,
+  productListingLabel,
   productsPath,
 } from "@/lib/product-languages";
 import { createClient } from "@/lib/supabase/server";
@@ -15,32 +16,51 @@ export default async function ProductsPage({
 }) {
   const profile = await requireProfile();
   const { lang } = await searchParams;
-  if (!isProductLanguageSlug(lang)) {
+  if (!isProductListingSlug(lang)) {
     redirect(productsPath());
   }
 
   const supabase = await createClient();
-  const { data: language } = await supabase
-    .from("languages")
-    .select("id, name, slug")
-    .eq("slug", lang)
-    .maybeSingle();
+  const uncategorized = isUncategorizedListing(lang);
 
-  if (!language) {
-    notFound();
+  if (!uncategorized) {
+    const { data: language } = await supabase
+      .from("languages")
+      .select("id, name, slug")
+      .eq("slug", lang)
+      .maybeSingle();
+
+    if (!language) {
+      notFound();
+    }
+
+    const { data: products } = await supabase
+      .from("products")
+      .select("*, languages(id, name)")
+      .eq("language_id", language.id)
+      .order("created_at", { ascending: false });
+
+    return (
+      <ProductsCatalog
+        products={products ?? []}
+        isAdmin={profile.role === "super_admin"}
+        languageLabel={productListingLabel(lang)}
+        languageSlug={lang}
+      />
+    );
   }
 
   const { data: products } = await supabase
     .from("products")
     .select("*, languages(id, name)")
-    .eq("language_id", language.id)
+    .is("language_id", null)
     .order("created_at", { ascending: false });
 
   return (
     <ProductsCatalog
       products={products ?? []}
       isAdmin={profile.role === "super_admin"}
-      languageLabel={productLanguageLabel(lang)}
+      languageLabel={productListingLabel(lang)}
       languageSlug={lang}
     />
   );

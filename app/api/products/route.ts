@@ -12,6 +12,7 @@ import {
 import { requireApiProfile, requireApiRole } from "@/lib/server/session";
 import { createClient } from "@/lib/supabase/server";
 import { parseSearchQuery, toIlikePattern } from "@/lib/search";
+import { UNCATEGORIZED_LANGUAGE_SLUG } from "@/lib/product-languages";
 
 export async function GET(request: Request) {
   try {
@@ -25,7 +26,9 @@ export async function GET(request: Request) {
       .select("*, languages(id, name)")
       .order("created_at", { ascending: false });
 
-    if (lang) {
+    if (lang === UNCATEGORIZED_LANGUAGE_SLUG) {
+      listQuery = listQuery.is("language_id", null);
+    } else if (lang) {
       const { data: language } = await supabase
         .from("languages")
         .select("id")

@@ -7,6 +7,7 @@ import { api } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { formatRupiah, nominalFinal } from "@/lib/format";
 import { parseSearchQuery } from "@/lib/search";
+import { isUncategorizedListing } from "@/lib/product-languages";
 import { AdminProductActions } from "@/components/admin-product-actions";
 import { PageHeader } from "@/components/page-header";
 import { ProductImage } from "@/components/product-image";
@@ -68,20 +69,35 @@ export function ProductsCatalog({
   }, [languageSlug, products, query]);
 
   const hasQuery = Boolean(parseSearchQuery(query));
+  const uncategorized = isUncategorizedListing(languageSlug);
   const emptyMessage = hasQuery
     ? "Tidak ada barang yang cocok dengan pencarian."
-    : isAdmin
-      ? `Belum ada barang ${languageLabel}. Mulai dengan mengunggah katalog pertama.`
-      : `Belum ada barang ${languageLabel} yang bisa dijual.`;
+    : uncategorized
+      ? "Tidak ada barang tanpa kategori bahasa."
+      : isAdmin
+        ? `Belum ada barang ${languageLabel}. Mulai dengan mengunggah katalog pertama.`
+        : `Belum ada barang ${languageLabel} yang bisa dijual.`;
 
   return (
     <>
       <PageHeader
-        title={isAdmin ? `Barang ${languageLabel}` : `Listing ${languageLabel}`}
+        title={
+          uncategorized
+            ? isAdmin
+              ? "Barang belum dikategorikan"
+              : "Listing belum dikategorikan"
+            : isAdmin
+              ? `Barang ${languageLabel}`
+              : `Listing ${languageLabel}`
+        }
         description={
-          isAdmin
-            ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
-            : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
+          uncategorized
+            ? isAdmin
+              ? "Barang tanpa kategori bahasa. Atur kategorinya dari halaman edit."
+              : "Barang yang belum punya kategori bahasa."
+            : isAdmin
+              ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
+              : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
         }
         actions={
           <>

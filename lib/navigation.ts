@@ -1,6 +1,8 @@
 import type { AppRole } from "@/lib/database.types";
 import {
   PRODUCT_LANGUAGE_MENUS,
+  UNCATEGORIZED_LANGUAGE_LABEL,
+  UNCATEGORIZED_LANGUAGE_SLUG,
   productsPath,
 } from "@/lib/product-languages";
 
@@ -16,10 +18,16 @@ export type NavItem = {
   children?: NavChild[];
 };
 
-const productChildren: NavChild[] = PRODUCT_LANGUAGE_MENUS.map((item) => ({
-  href: productsPath(item.slug),
-  label: item.label,
-}));
+const productChildren: NavChild[] = [
+  ...PRODUCT_LANGUAGE_MENUS.map((item) => ({
+    href: productsPath(item.slug),
+    label: item.label,
+  })),
+  {
+    href: productsPath(UNCATEGORIZED_LANGUAGE_SLUG),
+    label: UNCATEGORIZED_LANGUAGE_LABEL,
+  },
+];
 
 export function navItemsForRole(role: AppRole): NavItem[] {
   if (role === "super_admin") {
