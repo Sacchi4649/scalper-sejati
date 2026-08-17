@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Language } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { ConfirmDeleteModal } from "@/components/confirm-delete-modal";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function LanguageMaster({ languages }: { languages: Language[] }) {
-  const router = useRouter();
+  const [items, setItems] = useState(languages);
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -17,17 +16,25 @@ export function LanguageMaster({ languages }: { languages: Language[] }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    setItems(languages);
+  }, [languages]);
+
   async function createLanguage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setBusy(true);
     try {
-      await api("/api/languages", {
+      const payload = await api<{ language: Language }>("/api/languages", {
         method: "POST",
         body: JSON.stringify({ name }),
       });
       setName("");
-      router.refresh();
+      setItems((current) =>
+        [...current, payload.language].sort((a, b) =>
+          a.name.localeCompare(b.name, "id"),
+        ),
+      );
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal menambah kategori",
@@ -41,12 +48,14 @@ export function LanguageMaster({ languages }: { languages: Language[] }) {
     setError("");
     setBusy(true);
     try {
-      await api(`/api/languages/${id}`, {
+      const payload = await api<{ language: Language }>(`/api/languages/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ name: editingName }),
       });
       setEditingId(null);
-      router.refresh();
+      setItems((current) =>
+        current.map((item) => (item.id === id ? payload.language : item)),
+      );
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal mengubah kategori",
@@ -62,8 +71,9 @@ export function LanguageMaster({ languages }: { languages: Language[] }) {
     setError("");
     try {
       await api(`/api/languages/${deleteTarget.id}`, { method: "DELETE" });
+      const removedId = deleteTarget.id;
       setDeleteTarget(null);
-      router.refresh();
+      setItems((current) => current.filter((item) => item.id !== removedId));
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal menghapus kategori",
@@ -92,7 +102,7 @@ export function LanguageMaster({ languages }: { languages: Language[] }) {
         </Button>
       </form>
       <div className="divide-y divide-line rounded-2xl border border-line">
-        {languages.map((language) => (
+        {items.map((language) => (
           <div
             key={language.id}
             className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
@@ -151,7 +161,7 @@ export function LanguageMaster({ languages }: { languages: Language[] }) {
             </div>
           </div>
         ))}
-        {languages.length === 0 ? (
+        {items.length === 0 ? (
           <p className="px-5 py-8 text-sm text-muted">
             Belum ada kategori bahasa.
           </p>

@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { AppRole, Profile } from "@/lib/database.types";
 import { productsPath } from "@/lib/product-languages";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getCurrentProfile(): Promise<Profile | null> {
+export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -18,7 +19,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   return profile;
-}
+});
 
 export async function requireProfile() {
   const profile = await getCurrentProfile();

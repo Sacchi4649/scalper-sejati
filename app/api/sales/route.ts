@@ -79,7 +79,22 @@ export async function POST(request: Request) {
       throw new ApiError(400, error.message);
     }
 
-    return json({ sale: data }, 201);
+    const { data: updated } = await supabase
+      .from("products")
+      .select("id, stock")
+      .eq("id", product.id)
+      .maybeSingle();
+
+    return json(
+      {
+        sale: data,
+        product: updated ?? {
+          id: product.id,
+          stock: product.stock - quantity,
+        },
+      },
+      201,
+    );
   } catch (error) {
     return handleApiError(error);
   }

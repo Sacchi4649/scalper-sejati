@@ -31,13 +31,35 @@ export function ProductsCatalog({
 }) {
   const [view, setView] = useListView("scalper:products-view");
   const [query, setQuery] = useState("");
+  const [base, setBase] = useState(products);
   const [results, setResults] = useState(products);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
+    setBase(products);
+  }, [products]);
+
+  useEffect(() => {
+    if (!parseSearchQuery(query)) {
+      setResults(base);
+    }
+  }, [base, query]);
+
+  function patchProduct(id: number, patch: Partial<ProductWithLanguage>) {
+    const apply = (list: ProductWithLanguage[]) =>
+      list.map((item) => (item.id === id ? { ...item, ...patch } : item));
+    setBase(apply);
+    setResults(apply);
+  }
+
+  function removeProduct(id: number) {
+    setBase((list) => list.filter((item) => item.id !== id));
+    setResults((list) => list.filter((item) => item.id !== id));
+  }
+
+  useEffect(() => {
     const q = parseSearchQuery(query);
     if (!q) {
-      setResults(products);
       setSearching(false);
       return;
     }
@@ -66,7 +88,7 @@ export function ProductsCatalog({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [languageSlug, products, query]);
+  }, [languageSlug, query]);
 
   const hasQuery = Boolean(parseSearchQuery(query));
   const uncategorized = isUncategorizedListing(languageSlug);
@@ -149,9 +171,15 @@ export function ProductsCatalog({
               <div className="grid gap-4 p-5">
                 <ProductMeta product={product} />
                 {isAdmin ? (
-                  <AdminProductActions product={product} />
+                  <AdminProductActions
+                    product={product}
+                    onDeleted={() => removeProduct(product.id)}
+                  />
                 ) : (
-                  <SellerProductActions product={product} />
+                  <SellerProductActions
+                    product={product}
+                    onProductUpdate={(patch) => patchProduct(product.id, patch)}
+                  />
                 )}
               </div>
             </Card>
@@ -180,10 +208,16 @@ export function ProductsCatalog({
               </div>
               {isAdmin ? (
                 <div className="md:justify-self-end">
-                  <AdminProductActions product={product} />
+                  <AdminProductActions
+                    product={product}
+                    onDeleted={() => removeProduct(product.id)}
+                  />
                 </div>
               ) : (
-                <SellerProductActions product={product} />
+                <SellerProductActions
+                  product={product}
+                  onProductUpdate={(patch) => patchProduct(product.id, patch)}
+                />
               )}
             </Card>
           ))}

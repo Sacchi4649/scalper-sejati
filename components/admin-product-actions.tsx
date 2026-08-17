@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
@@ -9,8 +8,13 @@ import { cn } from "@/lib/cn";
 import { ConfirmDeleteModal } from "@/components/confirm-delete-modal";
 import { Button } from "@/components/ui/button";
 
-export function AdminProductActions({ product }: { product: Product }) {
-  const router = useRouter();
+export function AdminProductActions({
+  product,
+  onDeleted,
+}: {
+  product: Product;
+  onDeleted?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +25,7 @@ export function AdminProductActions({ product }: { product: Product }) {
     try {
       await api(`/api/products/${product.id}`, { method: "DELETE" });
       setOpen(false);
-      router.refresh();
+      onDeleted?.();
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal menghapus barang",

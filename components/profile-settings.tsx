@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Profile } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
@@ -30,7 +29,6 @@ export function ProfileSettings({
 }
 
 function NameForm({ profile, email }: { profile: Profile; email: string }) {
-  const router = useRouter();
   const [fullName, setFullName] = useState(profile.full_name);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -47,7 +45,6 @@ function NameForm({ profile, email }: { profile: Profile; email: string }) {
         body: JSON.stringify({ fullName }),
       });
       setMessage("Nama berhasil diperbarui.");
-      router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Gagal");
     } finally {

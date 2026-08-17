@@ -21,23 +21,20 @@ export async function GET(request: Request) {
     const query = parseSearchQuery(search.get("q"));
     const lang = search.get("lang");
     const supabase = await createClient();
-    let listQuery = supabase
-      .from("products")
-      .select("*, languages(id, name)")
-      .order("created_at", { ascending: false });
+    const uncategorized = lang === UNCATEGORIZED_LANGUAGE_SLUG;
+    let listQuery = uncategorized
+      ? supabase
+          .from("products")
+          .select("*, languages(id, name)")
+          .is("language_id", null)
+      : lang
+        ? supabase
+            .from("products")
+            .select("*, languages!inner(id, name)")
+            .eq("languages.slug", lang)
+        : supabase.from("products").select("*, languages(id, name)");
 
-    if (lang === UNCATEGORIZED_LANGUAGE_SLUG) {
-      listQuery = listQuery.is("language_id", null);
-    } else if (lang) {
-      const { data: language } = await supabase
-        .from("languages")
-        .select("id")
-        .eq("slug", lang)
-        .maybeSingle();
-      if (language) {
-        listQuery = listQuery.eq("language_id", language.id);
-      }
-    }
+    listQuery = listQuery.order("created_at", { ascending: false });
 
     if (query) {
       listQuery = listQuery.ilike("name", toIlikePattern(query));

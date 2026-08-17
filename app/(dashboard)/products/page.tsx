@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import {
   isProductListingSlug,
@@ -14,8 +14,8 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{ lang?: string }>;
 }) {
-  const profile = await requireProfile();
-  const { lang } = await searchParams;
+  const [profile, params] = await Promise.all([requireProfile(), searchParams]);
+  const { lang } = params;
   if (!isProductListingSlug(lang)) {
     redirect(productsPath());
   }
@@ -23,45 +23,27 @@ export default async function ProductsPage({
   const supabase = await createClient();
   const uncategorized = isUncategorizedListing(lang);
 
-  if (!uncategorized) {
-    const { data: language } = await supabase
-      .from("languages")
-      .select("id, name, slug")
-      .eq("slug", lang)
-      .maybeSingle();
+  const listQuery = uncategorized
+    ? supabase
+        .from("products")
+        .select("*, languages(id, name)")
+        .is("language_id", null)
+    : supabase
+        .from("products")
+        .select("*, languages!inner(id, name)")
+        .eq("languages.slug", lang);
 
-    if (!language) {
-      notFound();
-    }
+  const { data: products } = await listQuery.order("created_at", {
+    ascending: false,
+  });
 
-    const { data: products } = await supabase
-      .from("products")
-      .select("*, languages(id, name)")
-      .eq("language_id", language.id)
-      .order("created_at", { ascending: false });
-
-    return (
+  return (
       <ProductsCatalog
+        key={lang}
         products={products ?? []}
         isAdmin={profile.role === "super_admin"}
         languageLabel={productListingLabel(lang)}
         languageSlug={lang}
       />
-    );
-  }
-
-  const { data: products } = await supabase
-    .from("products")
-    .select("*, languages(id, name)")
-    .is("language_id", null)
-    .order("created_at", { ascending: false });
-
-  return (
-    <ProductsCatalog
-      products={products ?? []}
-      isAdmin={profile.role === "super_admin"}
-      languageLabel={productListingLabel(lang)}
-      languageSlug={lang}
-    />
   );
 }

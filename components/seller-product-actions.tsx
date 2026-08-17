@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
@@ -9,8 +8,13 @@ import { ConfirmModal } from "@/components/confirm-modal";
 import { Button } from "@/components/ui/button";
 import { Input, RupiahInput, Textarea } from "@/components/ui/input";
 
-export function SellerProductActions({ product }: { product: Product }) {
-  const router = useRouter();
+export function SellerProductActions({
+  product,
+  onProductUpdate,
+}: {
+  product: Product;
+  onProductUpdate?: (patch: Partial<Product>) => void;
+}) {
   const [quantity, setQuantity] = useState("1");
   const [requestedCommission, setRequestedCommission] = useState<number | null>(
     Number(product.commission),
@@ -55,16 +59,22 @@ export function SellerProductActions({ product }: { product: Product }) {
     setError("");
     setMessage("");
     try {
-      await api("/api/sales", {
-        method: "POST",
-        body: JSON.stringify({
-          productId: product.id,
-          quantity: Number(quantity),
-        }),
-      });
+      const payload = await api<{ product: { id: number; stock: number } }>(
+        "/api/sales",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            productId: product.id,
+            quantity: Number(quantity),
+          }),
+        },
+      );
       setConfirm(null);
+      setQuantity("1");
       setMessage("Penjualan tercatat.");
-      router.refresh();
+      onProductUpdate?.({
+        stock: payload.product?.stock ?? product.stock - Number(quantity),
+      });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Gagal");
     } finally {
@@ -86,8 +96,8 @@ export function SellerProductActions({ product }: { product: Product }) {
         }),
       });
       setConfirm(null);
+      setNote("");
       setMessage("Pengajuan komisi terkirim.");
-      router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Gagal");
     } finally {

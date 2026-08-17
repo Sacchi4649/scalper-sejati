@@ -100,7 +100,6 @@ export function ProductForm({
         ? selected.slug
         : DEFAULT_PRODUCT_LANGUAGE;
       router.push(productsPath(nextLang));
-      router.refresh();
     } catch (submitError) {
       setError(
         submitError instanceof Error ? submitError.message : "Gagal menyimpan",
