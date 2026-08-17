@@ -20,6 +20,11 @@ export function navItemsForRole(role: AppRole): NavItem[] {
         description: "Kelola katalog",
       },
       {
+        href: "/master",
+        label: "Master data",
+        description: "Kategori bahasa",
+      },
+      {
         href: "/commissions",
         label: "Pengajuan Komisi",
         description: "Tinjau permintaan seller",

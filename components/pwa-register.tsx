@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 export function PwaRegister() {
   useEffect(() => {
@@ -10,5 +11,5 @@ export function PwaRegister() {
     void navigator.serviceWorker.register("/sw.js", { scope: "/" });
   }, []);
 
-  return null;
+  return <PwaInstallBanner />;
 }

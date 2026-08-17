@@ -1,9 +1,9 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { ProductForm } from "@/components/product-form";
+import { LanguageMaster } from "@/components/language-master";
 import { Card, PageHeader } from "@/components/ui/card";
 
-export default async function NewProductPage() {
+export default async function MasterPage() {
   await requireRole("super_admin");
   const supabase = await createClient();
   const { data: languages } = await supabase
@@ -14,11 +14,12 @@ export default async function NewProductPage() {
   return (
     <div>
       <PageHeader
-        title="Upload barang"
-        description="Isi nama, kategori bahasa, harga, komisi, dan stok, lalu unggah gambar langsung ke Cloudinary."
+        title="Master data"
+        description="Kelola opsi kategori bahasa yang bisa dipilih saat menambah barang."
       />
       <Card>
-        <ProductForm languages={languages ?? []} />
+        <h2 className="mb-4 font-display text-xl">Kategori bahasa</h2>
+        <LanguageMaster languages={languages ?? []} />
       </Card>
     </div>
   );

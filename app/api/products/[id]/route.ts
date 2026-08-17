@@ -3,6 +3,7 @@ import {
   assertCommissionFitsPrice,
   handleApiError,
   json,
+  parseLanguageId,
   parseMoney,
   parseStock,
   readJson,
@@ -39,6 +40,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 type ProductBody = {
   name?: string;
+  languageId?: number | null;
   price?: number;
   commission?: number;
   stock?: number;
@@ -55,6 +57,9 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     const patch: Database["public"]["Tables"]["products"]["Update"] = {};
     if (body.name !== undefined) patch.name = body.name.trim();
+    if (body.languageId !== undefined) {
+      patch.language_id = parseLanguageId(body.languageId);
+    }
     if (body.price !== undefined || body.commission !== undefined) {
       const { data: current, error: currentError } = await supabase
         .from("products")

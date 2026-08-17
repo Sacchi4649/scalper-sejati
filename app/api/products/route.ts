@@ -3,6 +3,7 @@ import {
   assertCommissionFitsPrice,
   handleApiError,
   json,
+  parseLanguageId,
   parseMoney,
   parseStock,
   readJson,
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     let listQuery = supabase
       .from("products")
-      .select("*")
+      .select("*, languages(id, name)")
       .order("created_at", { ascending: false });
 
     if (query) {
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
 
 type ProductBody = {
   name?: string;
+  languageId?: number;
   price?: number;
   commission?: number;
   stock?: number;
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
   try {
     const profile = await requireApiRole("super_admin");
     const body = await readJson<ProductBody>(request);
-    requireFields(body, ["name", "price", "commission", "stock"]);
+    requireFields(body, ["name", "languageId", "price", "commission", "stock"]);
 
     const price = parseMoney(body.price, "Harga");
     const commission = parseMoney(body.commission, "Komisi");
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
       .from("products")
       .insert({
         name: body.name!.trim(),
+        language_id: parseLanguageId(body.languageId),
         price,
         commission,
         stock: parseStock(body.stock),

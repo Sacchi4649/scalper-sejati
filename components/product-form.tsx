@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Product } from "@/lib/database.types";
+import type { Language, Product } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { formatRupiah, nominalFinal } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Input, RupiahInput } from "@/components/ui/input";
+import { Input, RupiahInput, Select } from "@/components/ui/input";
 import { ImageUpload } from "@/components/image-upload";
 
 function toAmount(value: number | string | null | undefined) {
@@ -15,9 +15,18 @@ function toAmount(value: number | string | null | undefined) {
   return Number.isFinite(amount) ? amount : null;
 }
 
-export function ProductForm({ product }: { product?: Product }) {
+export function ProductForm({
+  product,
+  languages,
+}: {
+  product?: Product;
+  languages: Language[];
+}) {
   const router = useRouter();
   const [name, setName] = useState(product?.name ?? "");
+  const [languageId, setLanguageId] = useState(
+    product?.language_id?.toString() ?? "",
+  );
   const [price, setPrice] = useState<number | null>(toAmount(product?.price));
   const [commission, setCommission] = useState<number | null>(
     toAmount(product?.commission),
@@ -33,6 +42,11 @@ export function ProductForm({ product }: { product?: Product }) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (!languageId) {
+      setError("Kategori bahasa wajib dipilih");
+      return;
+    }
 
     if (price == null || commission == null) {
       setError("Harga dan komisi wajib diisi");
@@ -54,6 +68,7 @@ export function ProductForm({ product }: { product?: Product }) {
 
     const payload = {
       name,
+      languageId: Number(languageId),
       price,
       commission,
       stock: stockValue,
@@ -98,6 +113,25 @@ export function ProductForm({ product }: { product?: Product }) {
           onChange={(event) => setName(event.target.value)}
           required
         />
+        <Select
+          label="Kategori bahasa"
+          name="languageId"
+          value={languageId}
+          onChange={(event) => setLanguageId(event.target.value)}
+          required
+        >
+          <option value="">Pilih kategori bahasa</option>
+          {languages.map((language) => (
+            <option key={language.id} value={language.id}>
+              {language.name}
+            </option>
+          ))}
+        </Select>
+        {languages.length === 0 ? (
+          <p className="text-sm text-muted">
+            Belum ada kategori bahasa. Tambah dulu di menu Master data.
+          </p>
+        ) : null}
         <RupiahInput
           label="Harga"
           name="price"
@@ -135,7 +169,7 @@ export function ProductForm({ product }: { product?: Product }) {
         />
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
         <div className="flex gap-3">
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || languages.length === 0}>
             {saving ? "Menyimpan..." : "Simpan barang"}
           </Button>
           <Button variant="secondary" onClick={() => router.push("/products")}>

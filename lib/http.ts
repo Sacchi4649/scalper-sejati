@@ -74,3 +74,11 @@ export function parseStock(value: unknown) {
   }
   return stock;
 }
+
+export function parseLanguageId(value: unknown) {
+  const id = Number(value);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new ApiError(400, "Kategori bahasa wajib dipilih");
+  }
+  return id;
+}

@@ -73,6 +73,27 @@ export type Database = {
           },
         ]
       }
+      languages: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           commission: number
@@ -81,6 +102,7 @@ export type Database = {
           id: number
           image_public_id: string | null
           image_url: string | null
+          language_id: number | null
           name: string
           price: number
           stock: number
@@ -93,6 +115,7 @@ export type Database = {
           id?: never
           image_public_id?: string | null
           image_url?: string | null
+          language_id?: number | null
           name: string
           price: number
           stock?: number
@@ -105,6 +128,7 @@ export type Database = {
           id?: never
           image_public_id?: string | null
           image_url?: string | null
+          language_id?: number | null
           name?: string
           price?: number
           stock?: number
@@ -116,6 +140,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_language_id_fkey"
+            columns: ["language_id"]
+            isOneToOne: false
+            referencedRelation: "languages"
             referencedColumns: ["id"]
           },
         ]
@@ -244,6 +275,10 @@ export type AppRole = Database["public"]["Enums"]["app_role"]
 export type CommissionStatus = Database["public"]["Enums"]["commission_status"]
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 export type Product = Database["public"]["Tables"]["products"]["Row"]
+export type Language = Database["public"]["Tables"]["languages"]["Row"]
+export type ProductWithLanguage = Product & {
+  languages: Pick<Language, "id" | "name"> | null
+}
 export type Sale = Database["public"]["Tables"]["sales"]["Row"]
 export type CommissionRequest =
   Database["public"]["Tables"]["commission_requests"]["Row"]

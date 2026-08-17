@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Product } from "@/lib/database.types";
+import type { ProductWithLanguage } from "@/lib/database.types";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { formatRupiah, nominalFinal } from "@/lib/format";
@@ -21,7 +21,7 @@ export function ProductsCatalog({
   products,
   isAdmin,
 }: {
-  products: Product[];
+  products: ProductWithLanguage[];
   isAdmin: boolean;
 }) {
   const [view, setView] = useListView("scalper:products-view");
@@ -40,7 +40,7 @@ export function ProductsCatalog({
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       setSearching(true);
-      void api<{ products: Product[] }>(
+      void api<{ products: ProductWithLanguage[] }>(
         `/api/products?q=${encodeURIComponent(q)}`,
         { signal: controller.signal },
       )
@@ -76,7 +76,7 @@ export function ProductsCatalog({
         title={isAdmin ? "Barang jualan" : "Listing barang"}
         description={
           isAdmin
-            ? "Unggah barang, atur nama, harga, komisi, dan stok."
+            ? "Unggah barang, atur nama, kategori bahasa, harga, komisi, dan stok."
             : "Lihat barang yang dijual, catat penjualan, atau ajukan perubahan komisi."
         }
         actions={
@@ -173,13 +173,22 @@ export function ProductsCatalog({
   );
 }
 
+function languageName(product: ProductWithLanguage) {
+  const language = Array.isArray(product.languages)
+    ? product.languages[0]
+    : product.languages;
+  return language?.name ?? null;
+}
+
 function ProductMeta({
   product,
   compact = false,
 }: {
-  product: Product;
+  product: ProductWithLanguage;
   compact?: boolean;
 }) {
+  const language = languageName(product);
+
   return (
     <div className={cn("min-w-0", compact ? "grid gap-1.5" : "grid gap-3")}>
       <div
@@ -204,6 +213,7 @@ function ProductMeta({
             compact ? "" : "sm:shrink-0 sm:justify-end",
           )}
         >
+          {language ? <Badge tone="muted">{language}</Badge> : null}
           <Badge tone="gold">Komisi {formatRupiah(product.commission)}</Badge>
           <Badge tone={product.stock > 0 ? "green" : "danger"}>
             {product.stock > 0 ? `Stok ${product.stock}` : "Habis"}

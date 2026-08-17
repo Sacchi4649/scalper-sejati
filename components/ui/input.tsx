@@ -3,6 +3,7 @@
 import {
   useState,
   type InputHTMLAttributes,
+  type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/cn";
@@ -154,6 +155,33 @@ export function RupiahInput({
           "focus:border-brand focus:ring-2 focus:ring-brand/20", // state
         )}
       />
+    </label>
+  );
+}
+
+type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+};
+
+export function Select({ className, label, id, children, ...props }: SelectProps) {
+  const inputId = id ?? props.name;
+
+  return (
+    <label className="grid gap-1.5 text-sm">
+      <span className="font-medium text-ink">{label}</span>
+      <select
+        id={inputId}
+        className={cn(
+          "h-11 w-full", // layout
+          "rounded-xl border border-line bg-white px-3", // box
+          "text-sm text-ink outline-none", // type
+          "focus:border-brand focus:ring-2 focus:ring-brand/20", // state
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
     </label>
   );
 }
